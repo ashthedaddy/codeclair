@@ -2,15 +2,14 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { Output, streamText } from "ai";
 import { z } from "zod";
 
-import { ModelAnalysisSchema } from "@/lib/schema";
+import { ModelCodeExplanationSchema } from "@/lib/schema";
 import { checkRateLimit, extractClientIp } from "@/lib/rateLimit";
 import { renderSystemPrompt } from "@/lib/systemPrompt";
 
 const MODEL_ID = "claude-sonnet-4-6";
 
 const InputSchema = z.object({
-  jd: z.string().min(100).max(8000),
-  resume: z.string().min(100).max(8000),
+  code: z.string().min(20).max(12000),
   language: z.enum(["en", "fr"]),
   regenerate: z.boolean().optional(),
 });
@@ -54,8 +53,8 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
 
-  const { jd, resume, language, regenerate } = parsed.data;
-  const system = renderSystemPrompt({ jd, resume, language, regenerate });
+  const { code, language, regenerate } = parsed.data;
+  const system = renderSystemPrompt({ code, language, regenerate });
 
   let result;
   try {
@@ -64,8 +63,8 @@ export async function POST(request: Request): Promise<Response> {
       temperature: 0,
       system,
       prompt:
-        "Analyze the job description and resume above using the rubric and return the structured object.",
-      output: Output.object({ schema: ModelAnalysisSchema }),
+        "Explain the code above following the walkthrough, complexity, risk, and tests discipline from the system prompt. Return the structured object.",
+      output: Output.object({ schema: ModelCodeExplanationSchema }),
       onError({ error }) {
         console.error("[analyze] stream error", error);
       },
