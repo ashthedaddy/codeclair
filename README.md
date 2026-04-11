@@ -4,6 +4,8 @@
 
 **Live demo: [codeclair-mtl.vercel.app](https://codeclair-mtl.vercel.app)**
 
+![codeclair hero — useDebounce hook explained with streaming walkthrough, complexity, risks, and tests](./public/hero.png)
+
 `Next.js 16` · `React 19` · `TypeScript` · `AI SDK v6` · `Claude Sonnet 4.6` · `Zod` · `Vercel Fluid Compute` · `Bilingual EN / Québec FR`
 
 ---
