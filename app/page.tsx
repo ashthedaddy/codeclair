@@ -5,11 +5,11 @@ export default function Home() {
         Evening 2 — UI in progress
       </p>
       <h1 className="mt-4 font-serif text-5xl leading-tight text-foreground sm:text-6xl">
-        <span className="gradient-text">CareerLens</span>
+        <span className="gradient-text">codeclair</span>
       </h1>
       <p className="mt-4 max-w-xl text-center text-base text-muted">
-        Paste a job description and your resume. Get an honest ATS score and a
-        tailored cover letter in ten seconds. Bilingual EN / FR.
+        Paste any code. Get a plain-language walkthrough, Big-O complexity,
+        risks, and tests to write — in English or Québec French.
       </p>
     </main>
   );

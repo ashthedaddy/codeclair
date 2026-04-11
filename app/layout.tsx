@@ -16,9 +16,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "CareerLens — ATS score + cover letter in 10 seconds",
+  title: "codeclair — explain any code in English or Québec French",
   description:
-    "Paste a job description and your resume. Claude scores the match and writes a tailored cover letter. Bilingual EN/FR.",
+    "Paste any code. Claude returns a walkthrough, Big-O complexity, risks, and tests to write. Bilingual EN/FR.",
 };
 
 export default function RootLayout({
