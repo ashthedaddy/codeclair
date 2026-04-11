@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { CodeInput } from "@/components/CodeInput";
 import { ExplanationCard } from "@/components/ExplanationCard";
 import { Header } from "@/components/Header";
+import { Hero } from "@/components/Hero";
 import { SAMPLE_CODE_USE_DEBOUNCE } from "@/lib/samples";
 import type { Language } from "@/lib/systemPrompt";
 import { useCodeExplanation } from "@/lib/useCodeExplanation";
@@ -47,7 +48,11 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header language={language} onLanguageChange={handleLanguageChange} />
-      <main className="flex flex-1 flex-col gap-6 px-6 py-8 sm:px-10 sm:py-10 lg:flex-row lg:gap-8">
+      <Hero />
+      <main
+        id="tool"
+        className="flex flex-1 scroll-mt-6 flex-col gap-6 px-6 py-8 sm:px-10 sm:py-10 lg:flex-row lg:gap-8"
+      >
         <section className="flex flex-col lg:w-1/2">
           <CodeInput
             code={code}
