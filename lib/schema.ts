@@ -66,3 +66,58 @@ export const AnalysisSchema = z.object({
 });
 
 export type Analysis = z.infer<typeof AnalysisSchema>;
+
+// Anthropic's structured-output endpoint rejects JSON Schema constraints
+// like `minimum`, `maximum`, and array `minItems`/`maxItems`. We pass this
+// loose schema to the model call and enforce bounds via the rubric in the
+// system prompt + temperature 0. `AnalysisSchema` above stays strict and is
+// the source of truth for client-side types, validation, and the README.
+export const ModelAnalysisSchema = z.object({
+  overall_score: z
+    .number()
+    .describe(
+      "Weighted ATS match score (integer 0-100): 0.45*required_skills + 0.25*experience_level + 0.30*context_fit.",
+    ),
+  breakdown: z.object({
+    required_skills: z
+      .number()
+      .describe(
+        "Integer 0-100. Percent of hard skills and tools required by the JD that appear explicitly in the resume.",
+      ),
+    experience_level: z
+      .number()
+      .describe(
+        "Integer 0-100. How well the candidate's years of experience match the level the JD requires. 100 = exact match, 0 = off by 3+ years.",
+      ),
+    context_fit: z
+      .number()
+      .describe(
+        "Integer 0-100. How well the resume's domain, industries, and story map to the JD's domain and story.",
+      ),
+  }),
+  missing_keywords: z
+    .array(z.string())
+    .describe(
+      "Up to 8 concrete, JD-specific keywords or tools that are present in the JD but absent from the resume.",
+    ),
+  strength_signals: z
+    .array(z.string())
+    .describe(
+      "2 to 4 one-sentence callouts naming concrete resume items that directly match JD requirements.",
+    ),
+  cover_letter: z.object({
+    greeting: z
+      .string()
+      .describe(
+        "Single-line opening. Never 'Monsieur/Madame' in French — use Québec business register.",
+      ),
+    body: z
+      .string()
+      .describe(
+        "Three to four paragraphs, 250 to 350 words total. Specific, honest, tied to resume evidence.",
+      ),
+    closing: z
+      .string()
+      .describe("Short closing line with a concrete call to action."),
+  }),
+});

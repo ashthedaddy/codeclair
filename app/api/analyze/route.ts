@@ -2,7 +2,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { Output, streamText } from "ai";
 import { z } from "zod";
 
-import { AnalysisSchema } from "@/lib/schema";
+import { ModelAnalysisSchema } from "@/lib/schema";
 import { checkRateLimit, extractClientIp } from "@/lib/rateLimit";
 import { renderSystemPrompt } from "@/lib/systemPrompt";
 
@@ -64,7 +64,7 @@ export async function POST(request: Request): Promise<Response> {
       system,
       prompt:
         "Analyze the job description and resume above using the rubric and return the structured object.",
-      output: Output.object({ schema: AnalysisSchema }),
+      output: Output.object({ schema: ModelAnalysisSchema }),
       onError({ error }) {
         console.error("[analyze] stream error", error);
       },
