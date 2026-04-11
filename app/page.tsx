@@ -35,12 +35,13 @@ export default function Home() {
 
   const handleLanguageChange = useCallback(
     (next: Language) => {
+      if (next === language) return;
       setLanguage(next);
-      if (explanation && !isStreaming && code.trim().length >= 20) {
+      if (code.trim().length >= 20) {
         analyze({ code, language: next });
       }
     },
-    [analyze, code, explanation, isStreaming],
+    [analyze, code, language],
   );
 
   return (
