@@ -20,7 +20,7 @@ Real client work is off-limits (AI Voice Receptionist and GoStudy must stay priv
 | Q2 | Output scope | **ATS score + tailored cover letter.** No bullet rewrites. | Score is the hook (screenshot-able, concrete), cover letter is the wow (saves real minutes). Bullet rewrites are hard to do well without original job context and risk making the whole tool feel generic. |
 | Q3 | Bilingual EN/FR | **Bilingual v1, visible EN \| FR output toggle in the header.** Cross-language flex (French JD → English cover letter, or vice versa). | This is Arshia's competitive moat, literally in the top 4 superpowers on his career-ops profile. A visible toggle signals the moat in 0.5 seconds; auto-detect would keep it invisible. |
 | Q4 | First 5 seconds | **Prefilled with Arshia's real CV + a real Stripe Full-Stack Engineer JD.** Big "Analyze" button right there, zero friction. | Empty textareas fail the recruiter test. Prefilled = single-click-to-magic. Using Arshia's real CV scored against a real brand JD makes the tool self-demonstrating. |
-| Q5 | ATS methodology | **Pure AI, structured output, rubric in the system prompt.** Single `streamObject` call, temp 0, Zod-validated JSON. | On-brand for an AI engineer. A hand-rolled keyword matcher is what a junior dev who doesn't trust LLMs builds. Senior AI engineers trust the LLM *with guardrails* (temp 0, explicit rubric, structured output). |
+| Q5 | ATS methodology | **Pure AI, structured output, rubric in the system prompt.** Single `streamText` call with `Output.object({ schema })`, temp 0, Zod-validated JSON. | On-brand for an AI engineer. A hand-rolled keyword matcher is what a junior dev who doesn't trust LLMs builds. Senior AI engineers trust the LLM *with guardrails* (temp 0, explicit rubric, structured output). |
 | Q6 | Visual design | **AI-native aesthetic (dark mode, gradient accents, streaming shimmer) with a stolen D element: prominent EN \| FR toggle + subtle `Mtl` signature in the footer.** | Matches what recruiters see on claude.ai / perplexity.ai — instant "modern AI UX" register. The visible EN \| FR toggle makes the bilingual moat legible at a glance. |
 | Q7 | Sample JD | **Stripe Full-Stack Engineer (Canada remote).** | Max global brand recognition, public detailed JDs, Arshia has already applied there. |
 
@@ -32,7 +32,7 @@ Real client work is off-limits (AI Voice Receptionist and GoStudy must stay priv
 
 **Stack:**
 - Next.js 16 App Router, React 19, TypeScript, Tailwind 4, shadcn/ui (Button, Card, Badge, Textarea, Toggle, Skeleton — minimum).
-- **AI SDK v6** (`ai` + `@ai-sdk/anthropic`), specifically `streamObject` for structured streaming. This is the v6 primitive designed for "stream a Zod-validated object token-by-token."
+- **AI SDK v6** (`ai` + `@ai-sdk/anthropic`), specifically `streamText` with `Output.object({ schema })` for structured streaming. In v6, `streamObject` was replaced by this pattern — `streamText` is now the single streaming primitive and structured output is a first-class option on top of it.
 - **Claude Sonnet 4.6** (`claude-sonnet-4-6`). Fast enough to stream responsively, smart enough for bilingual rubric evaluation, ~5× cheaper than Opus. Opus is overkill, Haiku is under-qualified.
 - **Zod** for the output schema — drives server validation, client rendering, and TypeScript types from one source of truth.
 - **Deploy:** Vercel, Fluid Compute runtime (default — NOT Edge, per the Vercel 2026 knowledge update explicitly recommending against Edge for new work). `vercel.ts` for typed config.
@@ -52,7 +52,7 @@ Real client work is off-limits (AI Voice Receptionist and GoStudy must stay priv
 1. **T+0s — page load.** Dark background, gradient hero: *"CareerLens — Paste a job + your resume, get an ATS score and a tailored cover letter in 10 seconds. EN / FR."* Below: two large textareas side-by-side on desktop, stacked on mobile. Both **already filled** — left: real Stripe Full-Stack Engineer JD; right: Arshia's real CV from `~/Desktop/career-ops/cv.md`. Small badge above each: `Sample loaded — clear & try yours`. Prominent `EN | FR` pill toggle in the header (default: EN). Single big CTA: **"Analyze →"**.
 2. **T+0.5s — recruiter registers three things silently.** "Stuff is already in the boxes." "EN | FR toggle — bilingual, Montreal." "Live URL + GitHub link — this is a real shipped product."
 3. **T+2s — click Analyze.** Button shimmers. Page smooth-scrolls to a results area. Empty ScoreCard slides in with a skeleton.
-4. **T+3–12s — structured streaming fills in live.** With `streamObject`, this is mostly free:
+4. **T+3–12s — structured streaming fills in live.** With `streamText` + `Output.object`, this is mostly free:
    - `overall_score: 73` animates up from 0 inside a violet→cyan gradient ring.
    - `breakdown` populates three mini-bars in sequence (`Required skills 85`, `Experience level 60`, `Context fit 74`).
    - `missing_keywords` renders as small dismissible chips (`GraphQL`, `AWS`, `i18n`).
@@ -94,7 +94,7 @@ export const AnalysisSchema = z.object({
 export type Analysis = z.infer<typeof AnalysisSchema>;
 ```
 
-Splitting the cover letter into `greeting / body / closing` lets `streamObject` fill them in order so the UI can render the greeting the instant it arrives, producing tighter perceived streaming than one large blob.
+Splitting the cover letter into `greeting / body / closing` lets `streamText` + `Output.object` fill them in order so the UI can render the greeting the instant it arrives, producing tighter perceived streaming than one large blob.
 
 ### System prompt (`lib/systemPrompt.ts`)
 
@@ -141,7 +141,7 @@ Design notes on this prompt:
 - Model: `claude-sonnet-4-6`
 - Temperature: `0`
 - Max tokens: `2000` (well above the ~1200-token expected output)
-- `streamObject` from AI SDK v6, `schema: AnalysisSchema`
+- `streamText` from AI SDK v6 with `output: Output.object({ schema: AnalysisSchema })`
 
 ### Regenerate variation
 
@@ -162,7 +162,7 @@ When the user clicks `Regenerate`, append a single line to the messages payload:
   - `language` is `'en'` or `'fr'`
   - Failure → `400 INVALID_INPUT` with `{code, field}` JSON; never reach Claude.
 - **Rate limiter (`lib/rateLimit.ts`):** simple in-memory token bucket, `Map<ip, {tokens, updatedAt}>`, 10 requests / IP / hour. IP comes from `x-forwarded-for` or `x-real-ip`. Exhausted → `429 RATE_LIMITED` with `{retryAfterSec}`.
-- **Call:** `streamObject({ model: anthropic('claude-sonnet-4-6'), schema: AnalysisSchema, system: renderedSystemPrompt, temperature: 0, maxTokens: 2000 })`. Pipe the stream back to the client via the AI SDK's `toTextStreamResponse()` equivalent for objects.
+- **Call:** `streamText({ model: anthropic('claude-sonnet-4-6'), system: renderedSystemPrompt, prompt: 'Analyze...', temperature: 0, output: Output.object({ schema: AnalysisSchema }) })`. Pipe the stream back to the client via `result.toTextStreamResponse()`. (Note: AI SDK v6 deprecated `streamObject`; structured streaming now flows through `streamText` + `Output.object`.)
 
 ### Error taxonomy
 
@@ -203,7 +203,7 @@ The README is 50% of the project's value. Structure:
 1. **Hero** — tagline, live demo URL, one high-res screenshot of the filled-in result state (Arshia's CV scored against the Stripe JD, EN mode). Badge row: `Next.js 16` · `React 19` · `TypeScript` · `AI SDK v6` · `Claude Sonnet 4.6` · `Vercel` · `Bilingual EN/FR`.
 2. **Why this exists** — 3 first-person sentences: *"I built this in 3 evenings because I was job-hunting and wanted the tool I wished existed. It runs a temperature-0 Claude Sonnet 4.6 call with a Zod-validated structured output schema, streams token-by-token via AI SDK v6, and speaks Québec French. Live: careerlens.vercel.app."*
 3. **Demo** — GIF or still of the streaming result. High-res. No blur.
-4. **How it works** — 4-box mermaid architecture diagram: User → Next.js App Router → `/api/analyze` (Fluid Compute) → Claude Sonnet 4.6 (`streamObject` + Zod). Two paragraphs explaining the prompt rubric, Zod schema, temp 0, and XML-tag input isolation.
+4. **How it works** — 4-box mermaid architecture diagram: User → Next.js App Router → `/api/analyze` (Fluid Compute) → Claude Sonnet 4.6 (`streamText` + `Output.object` + Zod). Two paragraphs explaining the prompt rubric, Zod schema, temp 0, and XML-tag input isolation.
 5. **The prompt** — literal copy of `lib/systemPrompt.ts` in a code block. This is the "I actually did the prompt engineering" flex and it's the most important section for interview prep.
 6. **The schema** — literal copy of `lib/schema.ts` in a code block.
 7. **Bilingual handling** — one paragraph on why Québec French is explicit, and the negative test suite blocking France-French markers (`courriel`, `Monsieur/Madame`, etc.).
@@ -239,7 +239,7 @@ The README is 50% of the project's value. Structure:
 6. Create `lib/systemPrompt.ts` (single prompt with `{{language}}`, `{{jd}}`, `{{resume}}` interpolation).
 7. Create `lib/samples.ts` — inlined Stripe Full-Stack Engineer JD + inlined copy of Arshia's `cv.md`. The app must have zero filesystem dependency on `~/Desktop/career-ops/` at runtime.
 8. Create `lib/rateLimit.ts` — in-memory token bucket.
-9. Create `app/api/analyze/route.ts` — Zod input validation, rate limit check, `streamObject` call.
+9. Create `app/api/analyze/route.ts` — Zod input validation, rate limit check, `streamText` + `Output.object({ schema })` call.
 10. Smoke-test with curl using a fixture JSON body. No UI yet.
 11. Write `tests/prompt.test.ts` (vitest) — 5 fixture cases:
     - Score stability at temp 0 (re-run 3×, assert within ±3).
@@ -254,7 +254,7 @@ The README is 50% of the project's value. Structure:
 3. Build `components/AnalyzeForm.tsx` — dual textareas prefilled from `lib/samples.ts`, Analyze button, `Sample loaded — clear & try yours` badge.
 4. Build `components/ScoreCard.tsx` — animated score ring (conic gradient), breakdown bars, missing_keywords chips, strength_signals callouts.
 5. Build `components/CoverLetterCard.tsx` — streams `greeting / body / closing` sections in order, `Copy` / `Regenerate` / language-switch buttons.
-6. Wire up AI SDK v6 client-side streaming hook for `streamObject` against `/api/analyze`.
+6. Wire up AI SDK v6 client-side streaming hook for the `streamText` + `Output.object` response against `/api/analyze`.
 7. Global CSS: dark palette, hero serif, motion utilities.
 8. localStorage "recent analyses" sidebar — stretch goal, only if time remains.
 
@@ -277,7 +277,7 @@ The README is 50% of the project's value. Structure:
 ```
 app/
   page.tsx                      hero + form + results area
-  api/analyze/route.ts          POST handler, Zod input validation, rate limit, streamObject
+  api/analyze/route.ts          POST handler, Zod input validation, rate limit, streamText + Output.object
   layout.tsx                    dark theme, font setup
   globals.css                   palette vars, motion utilities
 
@@ -355,7 +355,7 @@ Before declaring any evening "done," each of these must pass:
 
 ## Known assumptions and things to confirm during build
 
-- **AI SDK v6 `streamObject` exact API shape** — confirm the client-side streaming hook signature against v6 docs on first use; v6 had breaking changes vs v5. Do not code from training-data memory.
+- **AI SDK v6 structured-output API shape** — confirmed during Evening 1: v6 deprecated `streamObject`; the replacement is `streamText({ output: Output.object({ schema }) })` + `result.toTextStreamResponse()`. The client-side streaming hook signature still needs confirmation against v6 docs when wiring the UI in Evening 2. Do not code from training-data memory.
 - **Next.js 16 route handler streaming API** — App Router streaming has changed between versions; read `node_modules/next/dist/docs/` before writing the route handler.
 - **Stripe public JD availability** — if the specific Full-Stack Engineer (Canada remote) JD used in samples is taken down, swap in another Stripe JD of the same level. Do not substitute a different brand — Stripe brand recognition is a deliberate choice.
 - **Fluid Compute in-memory rate limit persistence** — warm instances keep the bucket usable but cold starts reset it. This is accepted for v1; Upstash is the v2 fix documented in the README roadmap.
