@@ -50,9 +50,9 @@ function LanguagePill({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`min-w-[2.75rem] rounded-full px-3 py-1.5 transition ${
+      className={`min-w-[3rem] rounded-full px-4 py-1.5 transition ${
         active
-          ? "bg-surface-2 text-foreground shadow-[0_0_0_1px_var(--border)]"
+          ? "bg-gradient-to-r from-accent-violet to-accent-cyan text-background shadow-[0_0_20px_var(--accent-glow)]"
           : "text-muted hover:text-foreground"
       }`}
     >
