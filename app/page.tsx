@@ -6,28 +6,29 @@ import { CodeInput } from "@/components/CodeInput";
 import { ExplanationCard } from "@/components/ExplanationCard";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
-import { SAMPLE_CODE_USE_DEBOUNCE } from "@/lib/samples";
+import { SampleChips } from "@/components/SampleChips";
+import { SAMPLES, getSample, type SampleId } from "@/lib/samples";
 import type { Language } from "@/lib/systemPrompt";
 import { useCodeExplanation } from "@/lib/useCodeExplanation";
 
 export default function Home() {
-  const [code, setCode] = useState(SAMPLE_CODE_USE_DEBOUNCE);
+  const [code, setCode] = useState(SAMPLES[0].code);
+  const [activeSampleId, setActiveSampleId] = useState<SampleId | null>(
+    SAMPLES[0].id,
+  );
   const [language, setLanguage] = useState<Language>("en");
-  const [isPristine, setIsPristine] = useState(true);
 
   const { explanation, isStreaming, error, analyze } = useCodeExplanation();
 
-  const handleCodeChange = useCallback(
-    (next: string) => {
-      setCode(next);
-      if (isPristine) setIsPristine(false);
-    },
-    [isPristine],
-  );
+  const handleCodeChange = useCallback((next: string) => {
+    setCode(next);
+    setActiveSampleId(null);
+  }, []);
 
-  const handleClearSample = useCallback(() => {
-    setCode("");
-    setIsPristine(false);
+  const handleSampleSelect = useCallback((id: SampleId) => {
+    const sample = getSample(id);
+    setCode(sample.code);
+    setActiveSampleId(id);
   }, []);
 
   const handleAnalyze = useCallback(() => {
@@ -54,13 +55,17 @@ export default function Home() {
         className="flex flex-1 scroll-mt-6 flex-col gap-6 px-6 py-8 sm:px-10 sm:py-10 lg:flex-row lg:gap-8"
       >
         <section className="flex flex-col lg:w-1/2">
+          <div className="mb-3">
+            <SampleChips
+              activeSampleId={activeSampleId}
+              onSelect={handleSampleSelect}
+            />
+          </div>
           <CodeInput
             code={code}
             onCodeChange={handleCodeChange}
             onAnalyze={handleAnalyze}
             isLoading={isStreaming}
-            isPristine={isPristine}
-            onClearSample={handleClearSample}
           />
         </section>
         <section className="flex flex-col lg:w-1/2">

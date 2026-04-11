@@ -5,8 +5,6 @@ interface CodeInputProps {
   onCodeChange: (code: string) => void;
   onAnalyze: () => void;
   isLoading: boolean;
-  isPristine: boolean;
-  onClearSample: () => void;
 }
 
 export function CodeInput({
@@ -14,8 +12,6 @@ export function CodeInput({
   onCodeChange,
   onAnalyze,
   isLoading,
-  isPristine,
-  onClearSample,
 }: CodeInputProps) {
   const charCount = code.length;
   const tooShort = charCount < 20;
@@ -29,15 +25,6 @@ export function CodeInput({
         >
           Paste code
         </label>
-        {isPristine && (
-          <button
-            type="button"
-            onClick={onClearSample}
-            className="rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted transition hover:text-foreground"
-          >
-            Sample loaded — clear & paste yours
-          </button>
-        )}
       </div>
       <div className="relative flex-1 min-h-[24rem] rounded-2xl border border-border bg-surface focus-within:border-accent-violet">
         <textarea
