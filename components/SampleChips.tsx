@@ -10,8 +10,8 @@ interface SampleChipsProps {
 export function SampleChips({ activeSampleId, onSelect }: SampleChipsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="mr-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-2">
-        Try a sample:
+      <span className="mr-1 text-[10px] font-mono uppercase tracking-[0.22em] text-muted-2">
+        Try:
       </span>
       {SAMPLES.map((sample) => {
         const active = sample.id === activeSampleId;
@@ -21,15 +21,15 @@ export function SampleChips({ activeSampleId, onSelect }: SampleChipsProps) {
             type="button"
             onClick={() => onSelect(sample.id)}
             aria-pressed={active}
-            className={`flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs transition ${
+            className={`tactile flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[12px] ${
               active
-                ? "border-accent-violet/60 bg-accent-violet/10 text-foreground shadow-[0_0_16px_var(--accent-glow)]"
-                : "border-border bg-surface text-muted hover:border-border/60 hover:text-foreground"
+                ? "border-accent/50 bg-accent/10 text-foreground"
+                : "border-border bg-surface text-muted hover:border-border-strong hover:text-foreground"
             }`}
           >
             <span
-              className={`font-mono text-[9px] uppercase tracking-[0.14em] ${
-                active ? "text-accent-cyan" : "text-muted-2"
+              className={`font-mono text-[9px] uppercase tracking-[0.18em] ${
+                active ? "text-accent" : "text-muted-2"
               }`}
             >
               {sample.tag}

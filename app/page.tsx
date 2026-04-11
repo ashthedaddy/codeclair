@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { motion, useInView } from "motion/react";
+import { useCallback, useRef, useState } from "react";
 
 import { CodeInput } from "@/components/CodeInput";
 import { ExplanationCard } from "@/components/ExplanationCard";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { SampleChips } from "@/components/SampleChips";
+import { StatusChip } from "@/components/StatusChip";
 import { SAMPLES, getSample, type SampleId } from "@/lib/samples";
 import type { Language } from "@/lib/systemPrompt";
 import { useCodeExplanation } from "@/lib/useCodeExplanation";
@@ -19,6 +21,9 @@ export default function Home() {
   const [language, setLanguage] = useState<Language>("en");
 
   const { explanation, isStreaming, error, analyze } = useCodeExplanation();
+
+  const toolRef = useRef<HTMLElement>(null);
+  const toolInView = useInView(toolRef, { once: true, amount: 0.2 });
 
   const handleCodeChange = useCallback((next: string) => {
     setCode(next);
@@ -47,15 +52,19 @@ export default function Home() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-[100dvh] flex-col">
       <Header language={language} onLanguageChange={handleLanguageChange} />
       <Hero />
-      <main
+      <motion.main
+        ref={toolRef}
         id="tool"
-        className="flex flex-1 scroll-mt-6 flex-col gap-6 px-6 py-8 sm:px-10 sm:py-10 lg:flex-row lg:gap-8"
+        initial={{ opacity: 0, y: 32 }}
+        animate={toolInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="mx-auto flex w-full max-w-[1400px] flex-1 scroll-mt-6 flex-col gap-6 px-6 py-10 sm:px-10 sm:py-14 lg:flex-row lg:gap-8"
       >
         <section className="flex flex-col lg:w-1/2">
-          <div className="mb-3">
+          <div className="mb-4">
             <SampleChips
               activeSampleId={activeSampleId}
               onSelect={handleSampleSelect}
@@ -69,13 +78,11 @@ export default function Home() {
           />
         </section>
         <section className="flex flex-col lg:w-1/2">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
-              Explanation
+          <div className="mb-4 flex items-center justify-between">
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-2">
+              Output · explanation
             </span>
-            {isStreaming && (
-              <span className="text-xs text-accent-cyan">streaming…</span>
-            )}
+            {isStreaming && <StatusChip tone="accent" label="streaming" />}
           </div>
           <div className="flex-1">
             <ExplanationCard
@@ -85,15 +92,13 @@ export default function Home() {
             />
           </div>
         </section>
-      </main>
-      <footer className="border-t border-border px-6 py-5 text-xs text-muted sm:px-10">
-        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+      </motion.main>
+      <footer className="mx-auto w-full max-w-[1400px] border-t border-border px-6 py-6 sm:px-10">
+        <div className="flex flex-col items-start justify-between gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-2 sm:flex-row sm:items-center">
           <span>
-            codeclair · <span className="text-muted-2">Mtl</span>
+            codeclair <span className="mx-2 text-border-strong">/</span> Mtl
           </span>
-          <span className="text-muted-2">
-            Claude Sonnet 4.6 · AI SDK v6 · Next.js 16
-          </span>
+          <span>Claude Sonnet 4.6 · AI SDK v6 · Next.js 16</span>
         </div>
       </footer>
     </div>
