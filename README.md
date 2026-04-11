@@ -2,7 +2,7 @@
 
 > Paste any code. Claude explains it in English or Québec French — walkthrough, Big-O complexity, risks, and tests to write. Streaming, bilingual, ~10 seconds.
 
-**Live demo: [codeclair-two.vercel.app](https://codeclair-two.vercel.app)**
+**Live demo: [codeclair-mtl.vercel.app](https://codeclair-mtl.vercel.app)**
 
 `Next.js 16` · `React 19` · `TypeScript` · `AI SDK v6` · `Claude Sonnet 4.6` · `Zod` · `Vercel Fluid Compute` · `Bilingual EN / Québec FR`
 
