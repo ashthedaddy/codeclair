@@ -1,4 +1,13 @@
-# CareerLens — v1 Build Plan
+# CareerLens → codeclair — v1 Build Plan
+
+> **Pivot note (2026-04-11, mid-Evening-2):** this phase pivoted from
+> an ATS analyzer to a bilingual code explainer ("codeclair"). The
+> Evening 1 infrastructure (streaming \`/api/analyze\` with 502-on-
+> error fix, in-memory IP rate limiter, strict+loose Zod schema
+> split, XML input isolation, 5-fixture vitest suite) carried over
+> 1:1 — only the domain changed. The sections below still describe
+> the original scope; see commits after \`f084dd6\` for the codeclair
+> refactors.
 
 ## Context
 

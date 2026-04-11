@@ -1,4 +1,15 @@
-# CareerLens
+# CareerLens → codeclair (pivoted 2026-04-11)
+
+> **Pivot note:** Mid-Evening-2, this project pivoted from an ATS analyzer
+> ("CareerLens") to a bilingual code explainer ("codeclair"). Rationale:
+> shipping an ATS scorer to recruiters reads wrong ("why are you showing
+> them you know how their scoring works"). The Evening 1 plumbing
+> (streaming route, 502-on-error fix, rate limit, strict+loose Zod schema
+> pattern, XML input isolation, 5-test vitest suite) carried over 1:1 —
+> only the domain changed. The sections below still describe the
+> original CareerLens scope; see commits after \`f084dd6\` for the
+> codeclair refactors and \`.planning/phases/phase-1-v1/PLAN.md\` for the
+> same note at the phase level.
 
 ## What This Is
 
