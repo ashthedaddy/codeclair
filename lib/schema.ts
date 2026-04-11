@@ -1,123 +1,134 @@
 import { z } from "zod";
 
-export const AnalysisSchema = z.object({
-  overall_score: z
-    .number()
-    .int()
-    .min(0)
-    .max(100)
+export const CodeExplanationSchema = z.object({
+  summary: z
+    .string()
     .describe(
-      "Weighted ATS match score: 0.45*required_skills + 0.25*experience_level + 0.30*context_fit, rounded to an integer.",
+      "One to two sentence plain-language description of what the code does and why someone would use it.",
     ),
-  breakdown: z.object({
-    required_skills: z
-      .number()
-      .int()
-      .min(0)
-      .max(100)
-      .describe(
-        "Percent of hard skills and tools required by the JD that appear explicitly in the resume.",
-      ),
-    experience_level: z
-      .number()
-      .int()
-      .min(0)
-      .max(100)
-      .describe(
-        "How well the candidate's years of experience match the level the JD requires. 100 = exact match, 0 = off by 3+ years.",
-      ),
-    context_fit: z
-      .number()
-      .int()
-      .min(0)
-      .max(100)
-      .describe(
-        "How well the resume's domain, industries, and story map to the JD's domain and story.",
-      ),
-  }),
-  missing_keywords: z
-    .array(z.string())
+  walkthrough: z
+    .array(
+      z.object({
+        anchor: z
+          .string()
+          .describe(
+            "Short label for the code region being explained — e.g. a function name, a hook call, a branch. 1 to 6 words.",
+          ),
+        explanation: z
+          .string()
+          .describe(
+            "Two to four sentences explaining what this region does, why it's written this way, and any subtle behavior a reader might miss.",
+          ),
+      }),
+    )
+    .min(3)
     .max(8)
     .describe(
-      "Up to 8 concrete, JD-specific keywords or tools that are present in the JD but absent from the resume.",
+      "Ordered walkthrough of the code, 3 to 8 anchored sections. Sections should follow the code's execution flow, not file order.",
     ),
-  strength_signals: z
+  complexity: z.object({
+    time: z
+      .string()
+      .describe(
+        "Big-O time complexity, e.g. 'O(n)', 'O(n log n)', 'O(1) amortized'. Use standard notation.",
+      ),
+    space: z
+      .string()
+      .describe("Big-O space complexity using the same notation as time."),
+    notes: z
+      .string()
+      .describe(
+        "One to two sentences explaining the dominant cost and any hidden allocations, closures, or re-renders that affect real-world performance.",
+      ),
+  }),
+  risks: z
+    .array(
+      z.object({
+        severity: z.enum(["high", "medium", "low"]),
+        title: z.string().describe("Short name for the risk. 1 to 8 words."),
+        detail: z
+          .string()
+          .describe(
+            "One to three sentences describing the risk, when it triggers, and the concrete consequence.",
+          ),
+      }),
+    )
+    .max(5)
+    .describe(
+      "Zero to 5 concrete risks: bugs, footguns, race conditions, stale-closure issues, missing cleanup, security holes. Do not pad. If the code is genuinely clean, return an empty array.",
+    ),
+  tests_to_write: z
     .array(z.string())
     .min(2)
-    .max(4)
+    .max(6)
     .describe(
-      "2 to 4 one-sentence callouts naming concrete resume items that directly match JD requirements.",
+      "2 to 6 one-line test case descriptions covering the most important behaviors and edge cases, in priority order.",
     ),
-  cover_letter: z.object({
-    greeting: z
-      .string()
-      .describe(
-        "Single-line opening. Never 'Monsieur/Madame' in French — use Québec business register.",
-      ),
-    body: z
-      .string()
-      .describe(
-        "Three to four paragraphs, 250 to 350 words total. Specific, honest, tied to resume evidence.",
-      ),
-    closing: z
-      .string()
-      .describe("Short closing line with a concrete call to action."),
-  }),
 });
 
-export type Analysis = z.infer<typeof AnalysisSchema>;
+export type CodeExplanation = z.infer<typeof CodeExplanationSchema>;
 
 // Anthropic's structured-output endpoint rejects JSON Schema constraints
-// like `minimum`, `maximum`, and array `minItems`/`maxItems`. We pass this
-// loose schema to the model call and enforce bounds via the rubric in the
-// system prompt + temperature 0. `AnalysisSchema` above stays strict and is
-// the source of truth for client-side types, validation, and the README.
-export const ModelAnalysisSchema = z.object({
-  overall_score: z
-    .number()
+// like `minimum`, `maximum`, `minItems`, `maxItems`, and `enum` on nested
+// fields in some shapes. We pass this loose schema to the model call and
+// enforce bounds via the system prompt + temperature 0. `CodeExplanationSchema`
+// above stays strict and is the source of truth for client-side types,
+// validation, and the README.
+export const ModelCodeExplanationSchema = z.object({
+  summary: z
+    .string()
     .describe(
-      "Weighted ATS match score (integer 0-100): 0.45*required_skills + 0.25*experience_level + 0.30*context_fit.",
+      "One to two sentence plain-language description of what the code does and why someone would use it.",
     ),
-  breakdown: z.object({
-    required_skills: z
-      .number()
+  walkthrough: z
+    .array(
+      z.object({
+        anchor: z
+          .string()
+          .describe(
+            "Short label for the code region being explained. 1 to 6 words.",
+          ),
+        explanation: z
+          .string()
+          .describe(
+            "Two to four sentences explaining what this region does, why it's written this way, and any subtle behavior a reader might miss.",
+          ),
+      }),
+    )
+    .describe(
+      "Ordered walkthrough of the code, 3 to 8 anchored sections following execution flow.",
+    ),
+  complexity: z.object({
+    time: z
+      .string()
+      .describe("Big-O time complexity, e.g. 'O(n)', 'O(n log n)', 'O(1)'."),
+    space: z.string().describe("Big-O space complexity."),
+    notes: z
+      .string()
       .describe(
-        "Integer 0-100. Percent of hard skills and tools required by the JD that appear explicitly in the resume.",
-      ),
-    experience_level: z
-      .number()
-      .describe(
-        "Integer 0-100. How well the candidate's years of experience match the level the JD requires. 100 = exact match, 0 = off by 3+ years.",
-      ),
-    context_fit: z
-      .number()
-      .describe(
-        "Integer 0-100. How well the resume's domain, industries, and story map to the JD's domain and story.",
+        "One to two sentences explaining the dominant cost and hidden allocations, closures, or re-renders.",
       ),
   }),
-  missing_keywords: z
+  risks: z
+    .array(
+      z.object({
+        severity: z
+          .string()
+          .describe("One of: 'high', 'medium', 'low'."),
+        title: z.string().describe("Short name for the risk. 1 to 8 words."),
+        detail: z
+          .string()
+          .describe(
+            "One to three sentences describing the risk, when it triggers, and the concrete consequence.",
+          ),
+      }),
+    )
+    .describe(
+      "0 to 5 concrete risks: bugs, footguns, race conditions, stale closures, missing cleanup, security holes. Do not pad.",
+    ),
+  tests_to_write: z
     .array(z.string())
     .describe(
-      "Up to 8 concrete, JD-specific keywords or tools that are present in the JD but absent from the resume.",
+      "2 to 6 one-line test case descriptions covering the most important behaviors and edge cases, in priority order.",
     ),
-  strength_signals: z
-    .array(z.string())
-    .describe(
-      "2 to 4 one-sentence callouts naming concrete resume items that directly match JD requirements.",
-    ),
-  cover_letter: z.object({
-    greeting: z
-      .string()
-      .describe(
-        "Single-line opening. Never 'Monsieur/Madame' in French — use Québec business register.",
-      ),
-    body: z
-      .string()
-      .describe(
-        "Three to four paragraphs, 250 to 350 words total. Specific, honest, tied to resume evidence.",
-      ),
-    closing: z
-      .string()
-      .describe("Short closing line with a concrete call to action."),
-  }),
 });
