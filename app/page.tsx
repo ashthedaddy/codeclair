@@ -98,7 +98,7 @@ export default function Home() {
           <span>
             codeclair <span className="mx-2 text-border-strong">/</span> Mtl
           </span>
-          <span>Claude Sonnet 4.6 · AI SDK v6 · Next.js 16</span>
+          <span>AI SDK v6 · Next.js 16 · Fluid Compute</span>
         </div>
       </footer>
     </div>

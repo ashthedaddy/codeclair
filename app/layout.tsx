@@ -24,7 +24,7 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   title: "codeclair — explain any code in English or Québec French",
   description:
-    "Paste any code. Claude returns a walkthrough, Big-O complexity, risks, and tests to write. Bilingual EN/FR.",
+    "Paste any code. Get a walkthrough, Big-O complexity, risks, and tests to write. Bilingual EN/FR.",
 };
 
 export default function RootLayout({

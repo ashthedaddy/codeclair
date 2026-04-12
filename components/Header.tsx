@@ -35,7 +35,7 @@ export function Header({ language, onLanguageChange }: HeaderProps) {
 
       <div className="flex items-center gap-4">
         <div className="hidden sm:block">
-          <StatusChip tone="success" label="live" value="sonnet 4.6" />
+          <StatusChip tone="success" label="live" value="streaming" />
         </div>
 
         <div

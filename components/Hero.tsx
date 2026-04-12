@@ -9,7 +9,7 @@ import { SpotlightCard } from "@/components/SpotlightCard";
 import { StatusChip } from "@/components/StatusChip";
 
 const STACK = [
-  "Claude Sonnet 4.6",
+  "Structured Output",
   "AI SDK v6",
   "Zod structured output",
   "Next.js 16",
