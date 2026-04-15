@@ -1,18 +1,18 @@
 # codeclair
 
-> Paste any code. Claude explains it in English or Québec French — walkthrough, Big-O complexity, risks, and tests to write. Streaming, bilingual, ~10 seconds.
+> Paste any code. Get an expert explanation in English or Québec French — walkthrough, Big-O complexity, risks, and tests to write. Streaming, bilingual, ~10 seconds.
 
 **Live demo: [codeclair-mtl.vercel.app](https://codeclair-mtl.vercel.app)**
 
 ![codeclair hero — useDebounce hook explained with streaming walkthrough, complexity, risks, and tests](./public/hero.png)
 
-`Next.js 16` · `React 19` · `TypeScript` · `AI SDK v6` · `Claude Sonnet 4.6` · `Zod` · `Vercel Fluid Compute` · `Bilingual EN / Québec FR`
+`Next.js 16` · `React 19` · `TypeScript` · `AI SDK v6` · `Zod` · `Vercel Fluid Compute` · `Bilingual EN / Québec FR`
 
 ---
 
 ## Why this exists
 
-I wanted a tool that explains code the way a senior engineer would — not a line-by-line syntax narration, but the **why**, the subtle behavior, the Big-O, the risks a junior reader would miss, and the tests I'd write before shipping it. In English *or* Québec French, because I'm bilingual and every bilingual tool I've seen serves up Paris French that a Montreal reader clocks in half a second. Built in three evenings as the flagship pin on my GitHub profile: temperature-0 Claude Sonnet 4.6, Zod-validated structured output, streamed token-by-token via AI SDK v6, shipped on Vercel Fluid Compute.
+I wanted a tool that explains code the way a senior engineer would — not a line-by-line syntax narration, but the **why**, the subtle behavior, the Big-O, the risks a junior reader would miss, and the tests I'd write before shipping it. In English *or* Québec French, because I'm bilingual and every bilingual tool I've seen serves up Paris French that a Montreal reader clocks in half a second. Built in three evenings as the flagship pin on my GitHub profile: temperature-0 structured output via Zod, streamed token-by-token via AI SDK v6, shipped on Vercel Fluid Compute.
 
 ---
 
@@ -23,13 +23,13 @@ flowchart LR
   U["Browser<br/>paste code, pick EN/FR"] -->|POST /api/analyze| R["Next.js 16 App Router<br/>Route Handler"]
   R --> V["Zod input guard<br/>+ in-memory IP rate limit"]
   V --> M["streamText()<br/>+ Output.object(schema)<br/>temperature: 0"]
-  M --> C["Claude Sonnet 4.6<br/>@ai-sdk/anthropic"]
+  M --> C["LLM<br/>@ai-sdk/anthropic"]
   C -->|structured JSON stream| R
   R -->|text/plain stream| U
   U --> P["parsePartialJson<br/>progressive render"]
 ```
 
-The route handler runs on Vercel **Fluid Compute** (Node.js, not Edge — per Vercel's 2026 guidance). It validates input with Zod, enforces an in-memory IP rate limit, then calls Claude via `streamText({ output: Output.object({ schema }) })` at temperature 0 for reproducibility. The client reads the stream chunk-by-chunk and runs each partial through `parsePartialJson` from `ai@6`, so the `summary`, `walkthrough`, `complexity`, `risks`, and `tests_to_write` sections fade in progressively as the model emits them — instead of waiting for the full JSON before rendering anything.
+The route handler runs on Vercel **Fluid Compute** (Node.js, not Edge — per Vercel's 2026 guidance). It validates input with Zod, enforces an in-memory IP rate limit, then calls the LLM via `streamText({ output: Output.object({ schema }) })` at temperature 0 for reproducibility. The client reads the stream chunk-by-chunk and runs each partial through `parsePartialJson` from `ai@6`, so the `summary`, `walkthrough`, `complexity`, `risks`, and `tests_to_write` sections fade in progressively as the model emits them — instead of waiting for the full JSON before rendering anything.
 
 The route handler walks `result.fullStream` manually instead of calling `toTextStreamResponse()`. That way, if the model fails mid-invocation, the server can still return a `502 MODEL_ERROR` with an uncommitted response — not a silent empty `200` like the default helper produces.
 
@@ -150,7 +150,7 @@ ${code}
 }
 ```
 
-The XML `<code>` block is Anthropic's recommended prompt-injection defense — user code is data, not instructions, and comments inside the code are still code.
+The XML `<code>` block is a standard prompt-injection defense — user code is data, not instructions, and comments inside the code are still code.
 
 ---
 
@@ -209,7 +209,7 @@ export const CodeExplanationSchema = z.object({
 export type CodeExplanation = z.infer<typeof CodeExplanationSchema>;
 ```
 
-**One gotcha worth calling out:** Anthropic's structured-output endpoint rejects some JSON Schema constraints (`min`/`max` on nested arrays, nested enums) depending on the shape. I run the *strict* schema on the client for types and validation, and a parallel *loose* schema at the model boundary — the strict bounds are enforced by the system prompt + temperature 0, not the JSON Schema layer. It's one extra file, but it avoids a whole class of "why does this only fail in production" bugs. Both schemas live in [`lib/schema.ts`](./lib/schema.ts).
+**One gotcha worth calling out:** The provider's structured-output endpoint rejects some JSON Schema constraints (`min`/`max` on nested arrays, nested enums) depending on the shape. I run the *strict* schema on the client for types and validation, and a parallel *loose* schema at the model boundary — the strict bounds are enforced by the system prompt + temperature 0, not the JSON Schema layer. It's one extra file, but it avoids a whole class of "why does this only fail in production" bugs. Both schemas live in [`lib/schema.ts`](./lib/schema.ts).
 
 ---
 
@@ -275,7 +275,7 @@ The hard part of a recruiter-facing portfolio isn't shipping features, it's know
 - **Syntax-highlighted code display (Shiki)** — adds a ~300KB highlighter bundle and a rendering step on the hot path. Worth it once the tool has a reason to exist beyond a demo.
 - **Auth + history with RLS (Supabase magic link)** — sign-in walls destroy the 30-second recruiter test. Schema sketched, ready to wire.
 - **Shareable URLs (`/a/[id]`)** — needs persistence, which needs auth, which needs the above. One cascade deferred.
-- **Vercel AI Gateway** — great for observability, provider fallbacks, and per-user quotas once there's traffic to observe. For a solo demo, direct `@ai-sdk/anthropic` is simpler and the failure mode is "Anthropic is down, so is the demo" which is fine.
+- **Vercel AI Gateway** — great for observability, provider fallbacks, and per-user quotas once there's traffic to observe. For a solo demo, a direct provider SDK is simpler and the failure mode is "provider is down, so is the demo" which is fine.
 - **Upstash Redis rate limiter** — in-memory buckets keyed on IP work well enough on Fluid Compute (warm instances persist state) for a demo. Redis is the v2 swap-in, and the rate-limit module is already isolated in [`lib/rateLimit.ts`](./lib/rateLimit.ts) so the swap is ~15 lines.
 - **Streaming cancellation on navigate-away** — the client hook holds an `AbortController` but doesn't wire it to `router.events`. One useEffect away.
 - **Light mode toggle** — one less thing to design.
@@ -290,8 +290,7 @@ Every one of these has been thought through to the decision, not thought of and 
 |---|---|
 | **Next.js 16 App Router** | Route handlers + streaming responses are first-class; no server boilerplate. |
 | **React 19 + TypeScript** | Strict mode TS end to end — one Zod schema drives client types, server validation, and the model contract. |
-| **AI SDK v6 (`ai@6` + `@ai-sdk/anthropic`)** | `streamText({ output: Output.object({ schema }) })` is the v6 pattern that replaced `streamObject`. `parsePartialJson` on the client handles progressive rendering. |
-| **Claude Sonnet 4.6 (`claude-sonnet-4-6`)** | Fast enough to stream responsively, smart enough for Big-O reasoning and Québec French, ~5× cheaper than Opus. Opus is overkill, Haiku is under-qualified. |
+| **AI SDK v6 (`ai@6` + `@ai-sdk/anthropic`)** | `streamText({ output: Output.object({ schema }) })` is the v6 pattern that replaced `streamObject`. `parsePartialJson` on the client handles progressive rendering. Provider-abstracted — model is swappable in one line. |
 | **Zod** | Single source of truth for types + validation + model schema. |
 | **Tailwind 4** | CSS vars for the dark palette, zero runtime. |
 | **Vercel Fluid Compute** | Node.js (not Edge, per [Vercel 2026 guidance](https://vercel.com/changelog)). Warm instance reuse makes the in-memory rate limiter actually work. |
