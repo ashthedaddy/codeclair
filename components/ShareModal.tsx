@@ -1,14 +1,18 @@
 "use client";
 
+import { t } from "@/lib/i18n";
 import { SAMPLES } from "@/lib/samples";
+import type { Language } from "@/lib/systemPrompt";
 
 interface ShareModalProps {
   onClose: () => void;
+  language: Language;
 }
 
-export function ShareModal({ onClose }: ShareModalProps) {
+export function ShareModal({ onClose, language }: ShareModalProps) {
+  const s = t(language).share;
   const sample = SAMPLES[0];
-  const exp = sample.explanation.en;
+  const exp = sample.explanation[language] ?? sample.explanation.en;
   return (
     <div
       className="modal-backdrop"
@@ -16,26 +20,22 @@ export function ShareModal({ onClose }: ShareModalProps) {
     >
       <div className="modal">
         <div className="modal-head">
-          <h3>Share as image</h3>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            Close
-          </button>
+          <h3>{s.title}</h3>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>{s.close}</button>
         </div>
         <div className="share-card">
           <div className="sh-mark">
             <span>codeclair</span>
             <span className="d" />
           </div>
-          <div className="sh-title">A hook that waits for quiet, then commits.</div>
+          <div className="sh-title">{s.cardTitle}</div>
           <div className="sh-sum">{exp.summary}</div>
           <div className="sh-big-o">O(1)</div>
-          <div className="sh-foot">
-            useDebounce.ts · TypeScript · EN · codeclair-mtl.vercel.app
-          </div>
+          <div className="sh-foot">{s.fileFoot}</div>
         </div>
         <div className="modal-actions">
-          <button className="btn btn-secondary btn-sm">Copy link</button>
-          <button className="btn btn-primary btn-sm">Download PNG</button>
+          <button className="btn btn-secondary btn-sm">{s.copy}</button>
+          <button className="btn btn-primary btn-sm">{s.download}</button>
         </div>
       </div>
     </div>

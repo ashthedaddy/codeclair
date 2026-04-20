@@ -5,6 +5,7 @@ import type { DeepPartial } from "ai";
 
 import { CodeBlock } from "@/components/CodeBlock";
 import { StatusChip } from "@/components/StatusChip";
+import { t } from "@/lib/i18n";
 import { SAMPLES, type CannedExplanation, type Sample } from "@/lib/samples";
 import type { CodeExplanation } from "@/lib/schema";
 import type { Language } from "@/lib/systemPrompt";
@@ -28,9 +29,10 @@ function ArrowIcon() {
 }
 
 export function Tool({ language, onShareClick }: ToolProps) {
+  const s = t(language).tool;
   const [activeSampleId, setActiveSampleId] = useState<string>("useDebounce");
   const sample: Sample = useMemo(
-    () => SAMPLES.find((s) => s.id === activeSampleId) || SAMPLES[0],
+    () => SAMPLES.find((x) => x.id === activeSampleId) || SAMPLES[0],
     [activeSampleId],
   );
   const [code, setCode] = useState(sample.code);
@@ -38,14 +40,10 @@ export function Tool({ language, onShareClick }: ToolProps) {
 
   const { explanation, isStreaming, error, analyze } = useCodeExplanation();
 
-  useEffect(() => {
-    setCode(sample.code);
-  }, [sample]);
+  useEffect(() => { setCode(sample.code); }, [sample]);
 
   useEffect(() => {
-    if (code.trim().length >= 20) {
-      analyze({ code, language });
-    }
+    if (code.trim().length >= 20) analyze({ code, language });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
@@ -60,16 +58,9 @@ export function Tool({ language, onShareClick }: ToolProps) {
     <section className="main" id="tool">
       <div className="col-head" style={{ justifyContent: "space-between", marginBottom: 24 }}>
         <div>
-          <Kicker>Section 02</Kicker>
-          <h2
-            style={{
-              fontFamily: "var(--serif)",
-              fontSize: 36,
-              margin: "6px 0 0",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            The reading room.
+          <Kicker>{s.section}</Kicker>
+          <h2 style={{ fontFamily: "var(--serif)", fontSize: 36, margin: "6px 0 0", letterSpacing: "-0.02em" }}>
+            {s.title}
           </h2>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -79,42 +70,34 @@ export function Tool({ language, onShareClick }: ToolProps) {
             onClick={() => setShowDiff(!showDiff)}
             style={showDiff ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}}
           >
-            EN · FR diff
+            {s.diff}
           </button>
           <button className="btn btn-secondary btn-sm" onClick={onShareClick}>
-            Share as image
+            {s.share}
           </button>
         </div>
       </div>
 
       <div className="tool" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
         <section>
-          <div
-            style={{
-              marginBottom: 14,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            <span className="kicker" style={{ marginRight: 6 }}>Try:</span>
-            {SAMPLES.map((s) => (
+          <div style={{ marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <span className="kicker" style={{ marginRight: 6 }}>{s.try}</span>
+            {SAMPLES.map((x) => (
               <button
-                key={s.id}
+                key={x.id}
                 className="chip-sample"
-                aria-pressed={s.id === activeSampleId}
-                onClick={() => setActiveSampleId(s.id)}
+                aria-pressed={x.id === activeSampleId}
+                onClick={() => setActiveSampleId(x.id)}
               >
-                <span className="chip-tag">{s.tag}</span>
-                <span>{s.label}</span>
+                <span className="chip-tag">{x.tag}</span>
+                <span>{x.label}</span>
               </button>
             ))}
           </div>
 
           <div className="col-head">
-            <Kicker>Input · {sample.filename}</Kicker>
-            <span className="char-count">{code.length.toLocaleString()} chars</span>
+            <Kicker>{s.input} · {sample.filename}</Kicker>
+            <span className="char-count">{code.length.toLocaleString()} {s.chars}</span>
           </div>
 
           <div className="code-frame" style={{ position: "relative" }}>
@@ -134,29 +117,29 @@ export function Tool({ language, onShareClick }: ToolProps) {
             onClick={handleExplain}
             disabled={isStreaming}
           >
-            Explain this snippet <ArrowIcon />
+            {s.explain} <ArrowIcon />
           </button>
         </section>
 
         <section>
           <div className="col-head">
-            <Kicker>Output · explanation</Kicker>
-            {isStreaming && <StatusChip tone="accent" label="streaming" />}
+            <Kicker>{s.outputKicker}</Kicker>
+            {isStreaming && <StatusChip tone="accent" label={s.streaming} />}
             {!isStreaming && hasExplanation && !error && (
               <StatusChip
                 tone="success"
-                label="done"
-                value={`${explanation?.walkthrough?.length ?? 0} steps`}
+                label={s.done}
+                value={`${explanation?.walkthrough?.length ?? 0} ${s.steps}`}
                 breathing={false}
               />
             )}
-            {error && <StatusChip tone="danger" label="model error" breathing={false} />}
+            {error && <StatusChip tone="danger" label={s.error} breathing={false} />}
           </div>
 
           {error && (
             <div className="card empty">
               <div className="inner">
-                <div className="kicker" style={{ color: "var(--danger)" }}>Error</div>
+                <div className="kicker" style={{ color: "var(--danger)" }}>{s.errorKicker}</div>
                 <div style={{ marginTop: 10, color: "var(--fg-soft)" }}>{error}</div>
               </div>
             </div>
@@ -165,20 +148,19 @@ export function Tool({ language, onShareClick }: ToolProps) {
           {showEmpty && !error && (
             <div className="card empty">
               <div className="inner">
-                Paste a snippet on the left and hit{" "}
-                <span style={{ color: "var(--fg)" }}>Explain</span>. You&rsquo;ll get a
-                plain-language walkthrough, Big-O, risks to watch, and tests to write
-                &mdash; streamed in ~10 seconds.
+                {s.empty.pre}
+                <span style={{ color: "var(--fg)" }}>{s.empty.explain}</span>
+                {s.empty.post}
               </div>
             </div>
           )}
 
           {hasExplanation && !error && !showDiff && (
-            <LiveOutput explanation={explanation!} streaming={isStreaming} />
+            <LiveOutput explanation={explanation!} streaming={isStreaming} language={language} />
           )}
 
           {showDiff && !error && (
-            <DiffOutput sample={sample} />
+            <DiffOutput sample={sample} language={language} />
           )}
         </section>
       </div>
@@ -189,10 +171,13 @@ export function Tool({ language, onShareClick }: ToolProps) {
 function LiveOutput({
   explanation,
   streaming,
+  language,
 }: {
   explanation: DeepPartial<CodeExplanation>;
   streaming: boolean;
+  language: Language;
 }) {
+  const s = t(language).tool;
   const walk = (explanation.walkthrough ?? []).filter(Boolean);
   const risks = (explanation.risks ?? []).filter(Boolean);
   const tests = (explanation.tests_to_write ?? []).filter(Boolean);
@@ -203,7 +188,7 @@ function LiveOutput({
         <section className="slide-up" style={{ ["--i" as string]: 0 } as CSSProperties}>
           <div className="section-head">
             <span className="section-idx">S · 01</span>
-            <h3 className="section-title">Summary</h3>
+            <h3 className="section-title">{s.sec.summary}</h3>
           </div>
           <p className="summary">
             {explanation.summary}
@@ -215,8 +200,8 @@ function LiveOutput({
           <section className="slide-up" style={{ ["--i" as string]: 1 } as CSSProperties}>
             <div className="section-head">
               <span className="section-idx">S · 02</span>
-              <h3 className="section-title">Walkthrough</h3>
-              <span className="section-meta">{walk.length} steps</span>
+              <h3 className="section-title">{s.sec.walkthrough}</h3>
+              <span className="section-meta">{walk.length} {s.stepsMeta}</span>
             </div>
             <ol className="walkthrough">
               {walk.map((st, i) => (
@@ -238,17 +223,11 @@ function LiveOutput({
           <section className="slide-up" style={{ ["--i" as string]: 2 } as CSSProperties}>
             <div className="section-head">
               <span className="section-idx">S · 03</span>
-              <h3 className="section-title">Complexity</h3>
+              <h3 className="section-title">{s.sec.complexity}</h3>
             </div>
             <div className="complex-grid">
-              <div className="complex-cell">
-                <div className="k">Time</div>
-                <div className="v">{explanation.complexity.time}</div>
-              </div>
-              <div className="complex-cell">
-                <div className="k">Space</div>
-                <div className="v">{explanation.complexity.space}</div>
-              </div>
+              <div className="complex-cell"><div className="k">{s.timeLabel}</div><div className="v">{explanation.complexity.time}</div></div>
+              <div className="complex-cell"><div className="k">{s.spaceLabel}</div><div className="v">{explanation.complexity.space}</div></div>
             </div>
             <p className="complex-notes">{explanation.complexity.notes}</p>
           </section>
@@ -258,8 +237,8 @@ function LiveOutput({
           <section className="slide-up" style={{ ["--i" as string]: 3 } as CSSProperties}>
             <div className="section-head">
               <span className="section-idx">S · 04</span>
-              <h3 className="section-title">Risks</h3>
-              <span className="section-meta">{risks.length} noted</span>
+              <h3 className="section-title">{s.sec.risks}</h3>
+              <span className="section-meta">{risks.length} {s.noted}</span>
             </div>
             <ul className="risks">
               {risks.map((r, i) => {
@@ -283,13 +262,13 @@ function LiveOutput({
           <section className="slide-up" style={{ ["--i" as string]: 4 } as CSSProperties}>
             <div className="section-head">
               <span className="section-idx">S · 05</span>
-              <h3 className="section-title">Tests to write</h3>
+              <h3 className="section-title">{s.sec.tests}</h3>
             </div>
             <ul className="tests">
-              {tests.map((t, i) => (
+              {tests.map((ts, i) => (
                 <li key={i}>
                   <span className="n">{String(i + 1).padStart(2, "0")}</span>
-                  <span>{t}</span>
+                  <span>{ts}</span>
                 </li>
               ))}
             </ul>
@@ -300,7 +279,8 @@ function LiveOutput({
   );
 }
 
-function DiffOutput({ sample }: { sample: Sample }) {
+function DiffOutput({ sample, language }: { sample: Sample; language: Language }) {
+  const s = t(language).tool;
   const en: CannedExplanation = sample.explanation.en;
   const fr: CannedExplanation = sample.explanation.fr;
   return (
@@ -309,7 +289,7 @@ function DiffOutput({ sample }: { sample: Sample }) {
         <div className="diff-col">
           <div className="diff-label en">EN</div>
           <p className="summary">{en.summary}</p>
-          <div className="kicker" style={{ marginTop: 16 }}>Risks</div>
+          <div className="kicker" style={{ marginTop: 16 }}>{s.sec.risks}</div>
           <ul className="risks" style={{ marginTop: 8 }}>
             {en.risks.map((r, i) => (
               <li key={i} className="risk-row">

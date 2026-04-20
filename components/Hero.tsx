@@ -5,19 +5,8 @@ import type { CSSProperties } from "react";
 import { HeroAura, MagneticButton, ScrambleWord, useTilt } from "@/components/lux";
 import { KineticMetric } from "@/components/KineticMetric";
 import { StatusChip } from "@/components/StatusChip";
-
-interface HeadlineToken { w: string; accent: boolean; italic: boolean }
-
-const HEADLINE_WORDS: HeadlineToken[] = [
-  { w: "Read", accent: false, italic: false },
-  { w: "any", accent: false, italic: false },
-  { w: "code", accent: false, italic: false },
-  { w: "the", accent: false, italic: false },
-  { w: "way", accent: false, italic: false },
-  { w: "a", accent: false, italic: false },
-  { w: "senior", accent: true, italic: true },
-  { w: "would.", accent: false, italic: false },
-];
+import { t } from "@/lib/i18n";
+import type { Language } from "@/lib/systemPrompt";
 
 const STACK_ITEMS = [
   "Structured Output", "AI SDK v6", "Zod schema", "Next.js 16", "React 19",
@@ -27,6 +16,7 @@ const STACK_ITEMS = [
 
 interface HeroProps {
   onTryIt: () => void;
+  language: Language;
 }
 
 function ArrowIcon({ size = 14 }: { size?: number }) {
@@ -45,7 +35,8 @@ function ExternalIcon() {
   );
 }
 
-export function Hero({ onTryIt }: HeroProps) {
+export function Hero({ onTryIt, language }: HeroProps) {
+  const s = t(language).hero;
   return (
     <section className="hero">
       <div className="hero-bg">
@@ -72,28 +63,32 @@ export function Hero({ onTryIt }: HeroProps) {
         <div>
           <div className="meta-row">
             <span className="tick" />
-            <span>Dossier N° 001</span>
+            <span>{s.dossier}</span>
             <span>·</span>
-            <span>MTL</span>
+            <span>{s.mtl}</span>
             <span>·</span>
-            <span>Bilingual Code Reader</span>
+            <span>{s.tagline}</span>
           </div>
 
-          <h1 className="headline">
-            {HEADLINE_WORDS.map((t, i) => (
-              <span
-                key={i}
-                className={t.accent ? "accent" : ""}
-                style={{ fontStyle: t.italic ? "italic" : "normal" }}
-              >
-                <ScrambleWord word={t.w} delay={120 + i * 90} />
-              </span>
-            ))}
+          <h1 className="headline" key={language}>
+            {s.headline.map((word, i) => {
+              const accent = i === s.accentWordIndex;
+              return (
+                <span
+                  key={i}
+                  className={accent ? "accent" : ""}
+                  style={{ fontStyle: accent ? "italic" : "normal" }}
+                >
+                  <ScrambleWord word={word} delay={120 + i * 90} />
+                </span>
+              );
+            })}
           </h1>
 
           <p className="dek slide-up" style={{ ["--i" as string]: 9 } as CSSProperties}>
-            Paste a snippet. Get the walkthrough, Big-O, the risks a junior reader would miss, and the tests you&rsquo;d write before shipping &mdash;
-            <strong> in English or Québec French</strong>, streamed in about ten seconds.
+            {s.dekBefore}
+            <strong>{s.dekStrong}</strong>
+            {s.dekAfter}
           </p>
 
           <div
@@ -104,7 +99,7 @@ export function Hero({ onTryIt }: HeroProps) {
             } as CSSProperties}
           >
             <MagneticButton className="btn btn-primary btn-lg" onClick={onTryIt}>
-              Try it on a snippet <ArrowIcon />
+              {s.tryIt} <ArrowIcon />
             </MagneticButton>
             <MagneticButton
               className="btn btn-secondary"
@@ -113,19 +108,19 @@ export function Hero({ onTryIt }: HeroProps) {
               rel="noreferrer"
               strength={0.18}
             >
-              Source on GitHub <ExternalIcon />
+              {s.source} <ExternalIcon />
             </MagneticButton>
           </div>
 
           <div className="metrics slide-up" style={{ ["--i" as string]: 11 } as CSSProperties}>
-            <KineticMetric label="Stream" value={10} unit="s" />
-            <KineticMetric label="Temp" value={0} fractionDigits={2} />
-            <KineticMetric label="Langs" value={2} />
+            <KineticMetric label={s.metrics.stream} value={10} unit="s" />
+            <KineticMetric label={s.metrics.temp} value={0} fractionDigits={2} />
+            <KineticMetric label={s.metrics.langs} value={2} />
           </div>
         </div>
 
         <div className="slide-up spec-tilt" style={{ ["--i" as string]: 2 } as CSSProperties}>
-          <SpecCardTilt />
+          <SpecCardTilt language={language} />
         </div>
       </div>
 
@@ -143,38 +138,39 @@ export function Hero({ onTryIt }: HeroProps) {
   );
 }
 
-function SpecCardTilt() {
+function SpecCardTilt({ language }: { language: Language }) {
   const ref = useTilt<HTMLDivElement>(7);
+  const s = t(language).hero.spec;
   return (
     <div className="spec" ref={ref}>
       <div className="scanline" />
       <div className="spec-head">
-        <StatusChip tone="accent" label="output" value="stream" />
+        <StatusChip tone="accent" label={s.output} value={s.stream} />
         <span className="spec-filename">useDebounce.ts</span>
       </div>
 
-      <div style={{ marginTop: 18 }} className="kicker">Summary</div>
+      <div style={{ marginTop: 18 }} className="kicker">{s.summary}</div>
       <p className="spec-summary">
-        A hook that waits until the caller stops changing a value for{" "}
-        <span style={{ color: "var(--fg)" }}>delay</span> ms, then commits it.
-        Standard search-box pattern.
+        {s.specSummaryBefore}
+        <span style={{ color: "var(--fg)" }}>{s.specSummaryEmph}</span>
+        {s.specSummaryAfter}
         <span className="caret" />
       </p>
 
       <div className="spec-grid">
-        <div className="spec-tile"><div className="l">Time</div><div className="v">O(1)</div></div>
-        <div className="spec-tile"><div className="l">Space</div><div className="v">O(1)</div></div>
+        <div className="spec-tile"><div className="l">{s.time}</div><div className="v">O(1)</div></div>
+        <div className="spec-tile"><div className="l">{s.space}</div><div className="v">O(1)</div></div>
       </div>
 
-      <div style={{ marginTop: 20 }} className="kicker">Risks</div>
+      <div style={{ marginTop: 20 }} className="kicker">{s.risks}</div>
       <ul className="risk-list">
         <li>
-          <span className="sev-dot sev-medium" /> Stale closure if{" "}
-          <code style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--fg-soft)" }}>value</code>{" "}
-          is an object literal
+          <span className="sev-dot sev-medium" /> {s.risk1a}
+          <code style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--fg-soft)" }}>{s.risk1codeName}</code>
+          {s.risk1b}
         </li>
         <li>
-          <span className="sev-dot sev-low" /> Initial render commits raw value &mdash; intentional
+          <span className="sev-dot sev-low" /> {s.risk2}
         </li>
       </ul>
     </div>
